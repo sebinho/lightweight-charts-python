@@ -160,6 +160,25 @@ class Events:
             wrapper=lambda o, c, *arg: o(c, *[float(a) for a in arg])
         )
 
+        self.range_change_custom = JSEmitter(chart, f'range_change{chart.id}',
+            lambda o: chart.run_script(f'''
+            let checkLogicalRange = (logical) => {{
+                {chart.id}.chart.timeScale().unsubscribeVisibleLogicalRangeChange(checkLogicalRange)
+
+                let barsInfo = {chart.id}.series.barsInLogicalRange(logical)
+                if (barsInfo) window.callbackFunction(`range_change{chart.id}_~_${{barsInfo.barsBefore}};;;${{barsInfo.barsAfter}}`)
+
+                let timeout_time = 50
+                if (barsInfo.barsBefore < 0){{
+                    timeout_time = 1000
+                }}
+                setTimeout(() => {chart.id}.chart.timeScale().subscribeVisibleLogicalRangeChange(checkLogicalRange), timeout_time)
+            }}
+            {chart.id}.chart.timeScale().subscribeVisibleLogicalRangeChange(checkLogicalRange)
+            '''),
+            wrapper=lambda o, c, *arg: o(c, *[float(a) for a in arg])
+        )
+
         self.click = JSEmitter(chart, f'subscribe_click{salt}',
             lambda o: chart.run_script(f'''
             let clickHandler{salt} = (param) => {{
